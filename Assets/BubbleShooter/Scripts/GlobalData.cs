@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 public class GlobalData
 {
-
+    public static int WHITE_COUNT_TOTAL = 6;
     public static int WHITE_COUNT = 6;
 
     public const float DOWN_TIME = 8f;

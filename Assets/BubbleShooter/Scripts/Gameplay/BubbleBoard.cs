@@ -486,6 +486,14 @@ public class BubbleBoard : IBubbleBoard
             if (b == null) continue;
             if (b.transform.position.y < lowestBubblePos - Bubble.BUBBLE_RADIUS) continue;
 
+
+            if (b.transform.position.y > (Camera.main.orthographicSize - 0.5f * Bubble.BUBBLE_RADIUS))
+            {
+                _gameplayController._flyingBubbles.Clear();
+                Destroy(b.gameObject);
+                return;
+            }
+
             if (MeetAnyBubble(b.transform.position))
             {
                 AddFlyingBubble(b);
@@ -501,107 +509,52 @@ public class BubbleBoard : IBubbleBoard
         // Update last Flying Bubble
         if (_lastFlyingBubble != null && _lastFlyingBubble.transform.position.y < (Camera.main.orthographicSize - 0.5f * Bubble.BUBBLE_RADIUS))
         {
-            // Normal bubble
-            if (_lastFlyingBubble.ID >= 1 && _lastFlyingBubble.ID <= 10)
+            _connectedList.Clear();
+            _lastFlyingBubble.dieDelayCount = 0;
+            _lastFlyingBubble.rootDelay = _lastFlyingBubble;
+            _connectedList.Add(_lastFlyingBubble);
+            GetConnectedBubble(_lastFlyingBubble, _connectedList);
+
+            // Match 3, then explode
+            if (_connectedList.Count >= 3)
             {
-                _connectedList.Clear();
-                _lastFlyingBubble.dieDelayCount = 0;
-                _lastFlyingBubble.rootDelay = _lastFlyingBubble;
-                _connectedList.Add(_lastFlyingBubble);
-                GetConnectedBubble(_lastFlyingBubble, _connectedList);
-                
-                // Match 3, then explode
-                if (_connectedList.Count >= 3)
+                Debug.Log("explode");
+
+
+                foreach (Bubble b in _connectedList)
                 {
-                    Debug.Log("explode");
-                    _gameplayController.SetComboCount(_gameplayController.ComboCount > 14 ? _gameplayController.ComboCount : _gameplayController.ComboCount + 1);
-
-                    _gameplayController.GiveComboReward();
-
-                    foreach (Bubble b in _connectedList)
-                    {
-                        if (!_nextProcessList.Contains(b))
-                            _nextProcessList.Add(b);
-                    }
-
+                    if (!_nextProcessList.Contains(b))
+                        _nextProcessList.Add(b);
                 }
-                // No action
-                else
-                {
-                    GlobalData.WHITE_COUNT--;
-                    _gameplayController.DeleteWhiteBubble();
-                    if (GlobalData.WHITE_COUNT == 0)
-                    {
-                        
-                        //// Board updating function
-                        float currentBoardY = transform.position.y;
 
-                        currentBoardY -= Bubble.BUBBLE_RADIUS;
-
-                        transform.position = new Vector3(transform.position.x, currentBoardY, transform.position.z);
-
-                        GlobalData.WHITE_COUNT = 5;
-                        _gameplayController.CreateInitWhiteBubbles();
-                        //GameplayController.instance.AddWhiteBubble();
-                    }
-                    
-                    _gameplayController.SetComboCount(0);
-                }
-                _connectedList.Clear();
-                _lastFlyingBubble = null;
             }
-            else if (_lastFlyingBubble.ID == 19) // rainbow
+            // No action
+            else
             {
-
-                int newID = -1;
-                foreach (Bubble b in _lastFlyingBubble.linkedBubbles)
+                GlobalData.WHITE_COUNT--;
+                _gameplayController.DeleteWhiteBubble();
+                if (GlobalData.WHITE_COUNT == 0)
                 {
-                    if (b.ID >= 1 && b.ID <= 10)
+
+                    //// Board updating function
+                    float currentBoardY = transform.position.y;
+
+                    currentBoardY -= Bubble.BUBBLE_RADIUS;
+
+                    transform.position = new Vector3(transform.position.x, currentBoardY, transform.position.z);
+
+                    if (GlobalData.WHITE_COUNT_TOTAL > 1)
                     {
-                        newID = b.ID;
-                        _connectedList.Clear();
-                        GetConnectedBubble(b, _connectedList, -1, 0);
-                        if (_connectedList.Count >= 2)
-                        {
-                            _lastFlyingBubble.ID = b.ID;
-
-                            _connectedList.Clear();
-                            break;
-                        }
+                        GlobalData.WHITE_COUNT_TOTAL--;
                     }
-
+                    GlobalData.WHITE_COUNT = GlobalData.WHITE_COUNT_TOTAL;
+                    _gameplayController.CreateInitWhiteBubbles();
+                    //GameplayController.instance.AddWhiteBubble();
                 }
 
-                if (_lastFlyingBubble.ID == 19) // No changes
-                {
-                    if (newID == -1)
-                    {
-                        newID = GetRandomColor();
-
-                    }
-                    _lastFlyingBubble.ID = newID;
-                    _lastFlyingBubble.SetBubbleColor(newID, true);
-                    _lastFlyingBubble = null;
-                }
-
-                needUpdateBoard = true;
             }
-            else if (_lastFlyingBubble.ID == 20) // bomb
-            {
-                _connectedList.Clear();
-                _lastFlyingBubble.dieDelayCount = 0;
-                _lastFlyingBubble.rootDelay = _lastFlyingBubble;
-                _connectedList.Add(_lastFlyingBubble);
-                GetConnectedBubble(_lastFlyingBubble, _connectedList, 2, 1);
-
-                _gameplayController.SetComboCount(_gameplayController.ComboCount + 1);
-
-                _gameplayController.GiveComboReward();
-                _nextProcessList.AddRange(_connectedList);
-
-                _connectedList.Clear();
-                _lastFlyingBubble = null;
-            }
+            _connectedList.Clear();
+            _lastFlyingBubble = null;
         }
 
         // Update queued process list
@@ -668,7 +621,6 @@ public class BubbleBoard : IBubbleBoard
             // Drop
             if (dropList.Count > 0)
             {
-                _gameplayController.GiveComboReward(true, dropList.Count);
 
                 foreach (Bubble b in dropList)
                 {

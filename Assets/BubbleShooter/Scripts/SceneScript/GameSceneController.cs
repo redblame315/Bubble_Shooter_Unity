@@ -30,6 +30,7 @@ public class GameSceneController : MonoBehaviour
     void Start()
     {
         GlobalData.WHITE_COUNT = 6;
+        GlobalData.WHITE_COUNT_TOTAL = 6;
 
         needShowFade = false;
         gamePlayController = GameObject.FindObjectOfType<GameplayController>();

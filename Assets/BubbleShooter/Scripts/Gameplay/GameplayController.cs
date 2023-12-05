@@ -19,7 +19,6 @@ public class GameplayController : MonoBehaviour
     // Global
     public int _FlyingSpeedDiv = 10;
     public int CurrentScore = 0;
-    public int ComboCount = 0;
 
     public int RemainBubbleShoot = 69;
 
@@ -83,6 +82,7 @@ public class GameplayController : MonoBehaviour
 
         gameSceneController = GameObject.FindObjectOfType<GameSceneController>();
 
+        TopWall = Camera.main.orthographicSize - 0.5f * Bubble.BUBBLE_RADIUS;
         txtScore.text = "0";
         txtHighScore.text = PlayerPrefs.GetInt("HighScore", 0).ToString();
 
@@ -406,33 +406,7 @@ public class GameplayController : MonoBehaviour
 
 
     }
-
-    public void GiveComboReward(bool drop = false, int size = 1)
-    {
-        if (!drop)
-        {
-            if (ComboCount <= 14)
-                CurrentScore += GlobalData.PointReward[ComboCount, 1];
-            else
-            {
-                CurrentScore += GlobalData.PointReward[14, 1];
-                CurrentScore += (ComboCount - 14) * 2000;
-            }
-        }
-        else
-        {
-            if (size <= 14)
-                CurrentScore += GlobalData.PointReward[size, 2] * size;
-            else
-            {
-                CurrentScore += GlobalData.PointReward[14, 2] * 14;
-                CurrentScore += (size - 14) * 1000;
-            }
-        }
-
-        needUpdateStar = true;
-        needUpdateHUD = true;
-    }
+      
 
     public void GiveBubblePoint(int p = 10)
     {
@@ -442,20 +416,6 @@ public class GameplayController : MonoBehaviour
         needUpdateHUD = true;
     }
 
-
-    public void SetComboCount(int inc)
-    {
-        ComboCount = inc;
-
-        // Change shoot bubble
-        if (ComboCount > 0 && ComboCount % 6 == 0)
-        {
-            if (_loadedBubble != null)
-            {
-                _loadedBubble.SetBubbleColor(Random.Range(0, 2) == 0 ? 19 : 20);
-            }
-        }
-    }
 
     void UpdateArrow()
     {
